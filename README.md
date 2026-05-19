@@ -39,7 +39,3 @@ ws, err := srv.Workspace.Create(ctx, maradocs.WorkspaceCreateRequest{})
 - **Options**: poll-based methods accept `*maradocs.RequestOptions{ Timeout: &ms }` to override per-call timeouts (mirrors TS `RequestOptions`).
 
 Binary uploads return raw `[]byte` from download helpers instead of `Blob`.
-
-## Tests
-
-This repo ships a small `transport` unit test. Full integration coverage lives in the private sibling module [`../maradocs-sdk-go-test`](../maradocs-sdk-go-test).
