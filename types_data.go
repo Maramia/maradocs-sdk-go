@@ -2,8 +2,9 @@ package maradocs
 
 // DataUploadRequest starts a workspace file upload.
 type DataUploadRequest struct {
-	Name *string `json:"name,omitempty"`
-	Size int64   `json:"size"`
+	Name     *string `json:"name,omitempty"`
+	Size     int64   `json:"size"`
+	UseProxy *bool   `json:"use_proxy,omitempty"`
 }
 
 // DataUploadResponse contains presigned POST data for S3 and the unvalidated handle.
@@ -11,66 +12,88 @@ type DataUploadResponse struct {
 	PostURL               string                `json:"post_url"`
 	PostHeader            map[string]string     `json:"post_header"`
 	UnvalidatedFileHandle UnvalidatedFileHandle `json:"unvalidated_file_handle"`
+	ProxyURL              *string               `json:"proxy_url,omitempty"`
+}
+
+// CreateUploadResult is a proxy-only upload capability (no SSE-C post_url/post_header).
+type CreateUploadResult struct {
+	ProxyURL              string
+	UnvalidatedFileHandle UnvalidatedFileHandle
+}
+
+// CreateDownloadProxyResult is a proxy-only download capability (no SSE-C url/headers).
+type CreateDownloadProxyResult struct {
+	ProxyURL string
 }
 
 // DataDownloadPdfRequest requests a presigned PDF download URL.
 type DataDownloadPdfRequest struct {
 	PdfHandle PdfHandle `json:"pdf_handle"`
 	ExpiresIn *int      `json:"expires_in,omitempty"`
+	UseProxy  *bool     `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadPdfResponse contains presigned GET URL and headers.
 type DataDownloadPdfResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadJpegRequest requests a JPEG download URL.
 type DataDownloadJpegRequest struct {
 	JpegHandle JpegHandle `json:"jpeg_handle"`
 	ExpiresIn  *int       `json:"expires_in,omitempty"`
+	UseProxy   *bool      `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadJpegResponse contains presigned GET URL and headers.
 type DataDownloadJpegResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadPngRequest requests a PNG download URL.
 type DataDownloadPngRequest struct {
 	PngHandle PngHandle `json:"png_handle"`
 	ExpiresIn *int      `json:"expires_in,omitempty"`
+	UseProxy  *bool     `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadPngResponse contains presigned GET URL and headers.
 type DataDownloadPngResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadOdtRequest requests an ODT download URL.
 type DataDownloadOdtRequest struct {
 	OdtHandle OdtHandle `json:"odt_handle"`
 	ExpiresIn *int      `json:"expires_in,omitempty"`
+	UseProxy  *bool     `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadOdtResponse contains presigned GET URL and headers.
 type DataDownloadOdtResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadUnvalidatedRequest downloads an unvalidated file.
 type DataDownloadUnvalidatedRequest struct {
 	UnvalidatedFileHandle UnvalidatedFileHandle `json:"unvalidated_file_handle"`
 	ExpiresIn             *int                  `json:"expires_in,omitempty"`
+	UseProxy              *bool                 `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadUnvalidatedResponse contains presigned GET URL and headers.
 type DataDownloadUnvalidatedResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataMediaTypeRequest detects MIME type of an unvalidated file.
@@ -97,18 +120,20 @@ type VirusScanResponse struct {
 
 // DataDownloadMp4Request requests MP4 export/transcode.
 type DataDownloadMp4Request struct {
-	VideoHandle        VideoHandle `json:"video_handle"`
-	ConstantFrameRate  *string     `json:"constant_frame_rate,omitempty"`
-	AudioCodec         *string     `json:"audio_codec,omitempty"`
-	AudioBitrate       *string     `json:"audio_bitrate,omitempty"`
-	Format             *string     `json:"format,omitempty"`
-	ExpiresIn          *int        `json:"expires_in,omitempty"`
+	VideoHandle       VideoHandle `json:"video_handle"`
+	ConstantFrameRate *string     `json:"constant_frame_rate,omitempty"`
+	AudioCodec        *string     `json:"audio_codec,omitempty"`
+	AudioBitrate      *string     `json:"audio_bitrate,omitempty"`
+	Format            *string     `json:"format,omitempty"`
+	ExpiresIn         *int        `json:"expires_in,omitempty"`
+	UseProxy          *bool       `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadMp4Response contains presigned GET URL and headers.
 type DataDownloadMp4Response struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadMp3Request requests MP3 export.
@@ -117,12 +142,14 @@ type DataDownloadMp3Request struct {
 	Bitrate     *string     `json:"bitrate,omitempty"`
 	Format      *string     `json:"format,omitempty"`
 	ExpiresIn   *int        `json:"expires_in,omitempty"`
+	UseProxy    *bool       `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadMp3Response contains presigned GET URL and headers.
 type DataDownloadMp3Response struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadWavRequest requests WAV export.
@@ -131,24 +158,28 @@ type DataDownloadWavRequest struct {
 	BitDepth    *string     `json:"bit_depth,omitempty"`
 	Format      *string     `json:"format,omitempty"`
 	ExpiresIn   *int        `json:"expires_in,omitempty"`
+	UseProxy    *bool       `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadWavResponse contains presigned GET URL and headers.
 type DataDownloadWavResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }
 
 // DataDownloadFlacRequest requests FLAC export.
 type DataDownloadFlacRequest struct {
-	AudioHandle       AudioHandle `json:"audio_handle"`
-	CompressionLevel  *int        `json:"compression_level,omitempty"`
-	Format            *string     `json:"format,omitempty"`
-	ExpiresIn         *int        `json:"expires_in,omitempty"`
+	AudioHandle      AudioHandle `json:"audio_handle"`
+	CompressionLevel *int        `json:"compression_level,omitempty"`
+	Format           *string     `json:"format,omitempty"`
+	ExpiresIn        *int        `json:"expires_in,omitempty"`
+	UseProxy         *bool       `json:"use_proxy,omitempty"`
 }
 
 // DataDownloadFlacResponse contains presigned GET URL and headers.
 type DataDownloadFlacResponse struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Headers  map[string]string `json:"headers"`
+	ProxyURL *string           `json:"proxy_url,omitempty"`
 }

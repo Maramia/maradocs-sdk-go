@@ -25,7 +25,34 @@ func defaultProgress(onProgress func(float64)) func(float64) {
 	return onProgress
 }
 
-// Upload requests a presigned POST and uploads the bytes to object storage.
+func boolPtr(v bool) *bool { return &v }
+
+func requireProxyURL(proxyURL *string, kind string) (string, error) {
+	if proxyURL == nil || *proxyURL == "" {
+		return "", fmt.Errorf("%s proxy mint returned no proxy_url", kind)
+	}
+	return *proxyURL, nil
+}
+
+// CreateUpload mints a proxy-only upload capability URL for an unauthenticated third party.
+// Always sets use_proxy; never returns post_url/post_header (SSE-C key material).
+func (d *DataEp) CreateUpload(ctx context.Context, req DataUploadRequest) (*CreateUploadResult, error) {
+	req.UseProxy = boolPtr(true)
+	var resp DataUploadResponse
+	if err := d.t.postJSON(ctx, "/data/upload", &req, &resp, nil); err != nil {
+		return nil, err
+	}
+	proxyURL, err := requireProxyURL(resp.ProxyURL, "upload")
+	if err != nil {
+		return nil, err
+	}
+	return &CreateUploadResult{
+		ProxyURL:              proxyURL,
+		UnvalidatedFileHandle: resp.UnvalidatedFileHandle,
+	}, nil
+}
+
+// Upload requests a presigned POST and uploads the bytes to object storage (first-party, no proxy).
 func (d *DataEp) Upload(ctx context.Context, fileName string, size int64, r io.Reader, onProgress func(float64)) (*DataUploadResponse, error) {
 	onProgress = defaultProgress(onProgress)
 	req := DataUploadRequest{Size: size}
@@ -131,8 +158,27 @@ func (d *DataEp) MimeType(ctx context.Context, req DataMediaTypeRequest, opts *R
 	return &out, nil
 }
 
-// DownloadPdf returns raw PDF bytes.
+func (d *DataEp) createDownloadFromMeta(proxyURL *string) (*CreateDownloadProxyResult, error) {
+	url, err := requireProxyURL(proxyURL, "download")
+	if err != nil {
+		return nil, err
+	}
+	return &CreateDownloadProxyResult{ProxyURL: url}, nil
+}
+
+// CreateDownloadPdf mints a proxy-only PDF download capability URL.
+func (d *DataEp) CreateDownloadPdf(ctx context.Context, req DataDownloadPdfRequest) (*CreateDownloadProxyResult, error) {
+	req.UseProxy = boolPtr(true)
+	var meta DataDownloadPdfResponse
+	if err := d.t.postJSON(ctx, "/data/download/pdf", req, &meta, nil); err != nil {
+		return nil, err
+	}
+	return d.createDownloadFromMeta(meta.ProxyURL)
+}
+
+// DownloadPdf returns raw PDF bytes (first-party SSE-C).
 func (d *DataEp) DownloadPdf(ctx context.Context, req DataDownloadPdfRequest, onProgress func(float64)) ([]byte, error) {
+	req.UseProxy = nil
 	var meta DataDownloadPdfResponse
 	if err := d.t.postJSON(ctx, "/data/download/pdf", req, &meta, nil); err != nil {
 		return nil, err
@@ -140,8 +186,19 @@ func (d *DataEp) DownloadPdf(ctx context.Context, req DataDownloadPdfRequest, on
 	return d.downloadGET(ctx, meta.URL, meta.Headers, onProgress)
 }
 
-// DownloadJpeg returns raw JPEG bytes.
+// CreateDownloadJpeg mints a proxy-only JPEG download capability URL.
+func (d *DataEp) CreateDownloadJpeg(ctx context.Context, req DataDownloadJpegRequest) (*CreateDownloadProxyResult, error) {
+	req.UseProxy = boolPtr(true)
+	var meta DataDownloadJpegResponse
+	if err := d.t.postJSON(ctx, "/data/download/jpeg", req, &meta, nil); err != nil {
+		return nil, err
+	}
+	return d.createDownloadFromMeta(meta.ProxyURL)
+}
+
+// DownloadJpeg returns raw JPEG bytes (first-party SSE-C).
 func (d *DataEp) DownloadJpeg(ctx context.Context, req DataDownloadJpegRequest, onProgress func(float64)) ([]byte, error) {
+	req.UseProxy = nil
 	var meta DataDownloadJpegResponse
 	if err := d.t.postJSON(ctx, "/data/download/jpeg", req, &meta, nil); err != nil {
 		return nil, err
@@ -149,8 +206,19 @@ func (d *DataEp) DownloadJpeg(ctx context.Context, req DataDownloadJpegRequest, 
 	return d.downloadGET(ctx, meta.URL, meta.Headers, onProgress)
 }
 
-// DownloadPng returns raw PNG bytes.
+// CreateDownloadPng mints a proxy-only PNG download capability URL.
+func (d *DataEp) CreateDownloadPng(ctx context.Context, req DataDownloadPngRequest) (*CreateDownloadProxyResult, error) {
+	req.UseProxy = boolPtr(true)
+	var meta DataDownloadPngResponse
+	if err := d.t.postJSON(ctx, "/data/download/png", req, &meta, nil); err != nil {
+		return nil, err
+	}
+	return d.createDownloadFromMeta(meta.ProxyURL)
+}
+
+// DownloadPng returns raw PNG bytes (first-party SSE-C).
 func (d *DataEp) DownloadPng(ctx context.Context, req DataDownloadPngRequest, onProgress func(float64)) ([]byte, error) {
+	req.UseProxy = nil
 	var meta DataDownloadPngResponse
 	if err := d.t.postJSON(ctx, "/data/download/png", req, &meta, nil); err != nil {
 		return nil, err
@@ -158,8 +226,19 @@ func (d *DataEp) DownloadPng(ctx context.Context, req DataDownloadPngRequest, on
 	return d.downloadGET(ctx, meta.URL, meta.Headers, onProgress)
 }
 
-// DownloadOdt returns raw ODT bytes.
+// CreateDownloadOdt mints a proxy-only ODT download capability URL.
+func (d *DataEp) CreateDownloadOdt(ctx context.Context, req DataDownloadOdtRequest) (*CreateDownloadProxyResult, error) {
+	req.UseProxy = boolPtr(true)
+	var meta DataDownloadOdtResponse
+	if err := d.t.postJSON(ctx, "/data/download/odt", req, &meta, nil); err != nil {
+		return nil, err
+	}
+	return d.createDownloadFromMeta(meta.ProxyURL)
+}
+
+// DownloadOdt returns raw ODT bytes (first-party SSE-C).
 func (d *DataEp) DownloadOdt(ctx context.Context, req DataDownloadOdtRequest, onProgress func(float64)) ([]byte, error) {
+	req.UseProxy = nil
 	var meta DataDownloadOdtResponse
 	if err := d.t.postJSON(ctx, "/data/download/odt", req, &meta, nil); err != nil {
 		return nil, err
@@ -167,8 +246,19 @@ func (d *DataEp) DownloadOdt(ctx context.Context, req DataDownloadOdtRequest, on
 	return d.downloadGET(ctx, meta.URL, meta.Headers, onProgress)
 }
 
-// DownloadUnvalidated downloads an unvalidated file by presigned URL.
+// CreateDownloadUnvalidated mints a proxy-only unvalidated-file download capability URL.
+func (d *DataEp) CreateDownloadUnvalidated(ctx context.Context, req DataDownloadUnvalidatedRequest) (*CreateDownloadProxyResult, error) {
+	req.UseProxy = boolPtr(true)
+	var meta DataDownloadUnvalidatedResponse
+	if err := d.t.postJSON(ctx, "/data/download/unvalidated", req, &meta, nil); err != nil {
+		return nil, err
+	}
+	return d.createDownloadFromMeta(meta.ProxyURL)
+}
+
+// DownloadUnvalidated downloads an unvalidated file by first-party presigned URL.
 func (d *DataEp) DownloadUnvalidated(ctx context.Context, req DataDownloadUnvalidatedRequest, onProgress func(float64)) ([]byte, error) {
+	req.UseProxy = nil
 	var meta DataDownloadUnvalidatedResponse
 	if err := d.t.postJSON(ctx, "/data/download/unvalidated", req, &meta, nil); err != nil {
 		return nil, err
@@ -178,6 +268,7 @@ func (d *DataEp) DownloadUnvalidated(ctx context.Context, req DataDownloadUnvali
 
 // DownloadMp4 runs async export then downloads MP4 bytes.
 func (d *DataEp) DownloadMp4(ctx context.Context, req DataDownloadMp4Request, onProgress func(float64), opts *RequestOptions) ([]byte, error) {
+	req.UseProxy = nil
 	to := optTimeoutMs(opts)
 	var task TaskCreatedResponse
 	if err := d.t.postJSON(ctx, "/data/download/mp4", req, &task, to); err != nil {
@@ -192,6 +283,7 @@ func (d *DataEp) DownloadMp4(ctx context.Context, req DataDownloadMp4Request, on
 
 // DownloadMp3 runs async export then downloads MP3 bytes.
 func (d *DataEp) DownloadMp3(ctx context.Context, req DataDownloadMp3Request, onProgress func(float64), opts *RequestOptions) ([]byte, error) {
+	req.UseProxy = nil
 	to := optTimeoutMs(opts)
 	var task TaskCreatedResponse
 	if err := d.t.postJSON(ctx, "/data/download/mp3", req, &task, to); err != nil {
@@ -206,6 +298,7 @@ func (d *DataEp) DownloadMp3(ctx context.Context, req DataDownloadMp3Request, on
 
 // DownloadWav runs async export then downloads WAV bytes.
 func (d *DataEp) DownloadWav(ctx context.Context, req DataDownloadWavRequest, onProgress func(float64), opts *RequestOptions) ([]byte, error) {
+	req.UseProxy = nil
 	to := optTimeoutMs(opts)
 	var task TaskCreatedResponse
 	if err := d.t.postJSON(ctx, "/data/download/wav", req, &task, to); err != nil {
@@ -220,6 +313,7 @@ func (d *DataEp) DownloadWav(ctx context.Context, req DataDownloadWavRequest, on
 
 // DownloadFlac runs async export then downloads FLAC bytes.
 func (d *DataEp) DownloadFlac(ctx context.Context, req DataDownloadFlacRequest, onProgress func(float64), opts *RequestOptions) ([]byte, error) {
+	req.UseProxy = nil
 	to := optTimeoutMs(opts)
 	var task TaskCreatedResponse
 	if err := d.t.postJSON(ctx, "/data/download/flac", req, &task, to); err != nil {
